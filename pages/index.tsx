@@ -1,7 +1,9 @@
-import { NavigateToResource } from "@refinedev/nextjs-router";
+import {NavigateToResource} from "@refinedev/nextjs-router";
+import React from "react";
+import {MdxRenderer} from "@components/mdx-renderer";
 
 export default function Home() {
-  return <NavigateToResource resource="blog_posts" />;
+    return <MdxRenderer />
 }
 
-Home.noLayout = true;
+// Home.noLayout = true;

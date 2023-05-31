@@ -1,94 +1,92 @@
-import { GitHubBanner, Refine } from "@refinedev/core";
-import { RefineKbar, RefineKbarProvider } from "@refinedev/kbar";
+import {Refine} from "@refinedev/core";
+import {RefineKbar, RefineKbarProvider} from "@refinedev/kbar";
 import {
-  RefineSnackbarProvider,
-  ThemedLayout,
-  notificationProvider,
+    RefineSnackbarProvider,
+    notificationProvider,
 } from "@refinedev/mui";
 import routerProvider, {
-  UnsavedChangesNotifier,
+    UnsavedChangesNotifier,
 } from "@refinedev/nextjs-router";
-import type { NextPage } from "next";
-import { AppProps } from "next/app";
+import type {NextPage} from "next";
+import {AppProps} from "next/app";
 
-import { Header } from "@components/header";
-import { ColorModeContextProvider } from "@contexts";
-import { CssBaseline, GlobalStyles } from "@mui/material";
+import {ColorModeContextProvider} from "@contexts";
+import {CssBaseline, GlobalStyles} from "@mui/material";
 import dataProvider from "@refinedev/simple-rest";
-import { authProvider } from "src/authProvider";
+import {authProvider} from "src/authProvider";
+import React from "react";
+import {createResources} from "src/refine/createResources";
+import {useJinjatProject} from "@components/hooks/useJinjatProject";
+import {jinjatProvider} from "@components/hooks/schema";
+import {JinjatServiceContextProvider} from "@components/hooks/useSchemaProvider";
+import {ThemedLayout} from "@components/themedLayout";
 
-const API_URL = "https://api.fake-rest.refine.dev";
+const API_URL = "http://127.0.0.1:8581";
 
 export type NextPageWithLayout<P = {}, IP = P> = NextPage<P, IP> & {
-  noLayout?: boolean;
+    noLayout?: boolean;
 };
 
 type AppPropsWithLayout = AppProps & {
-  Component: NextPageWithLayout;
+    Component: NextPageWithLayout;
 };
 
-function MyApp({ Component, pageProps }: AppPropsWithLayout): JSX.Element {
-  const renderComponent = () => {
-    if (Component.noLayout) {
-      return <Component {...pageProps} />;
+function JinjatApp({Component, pageProps}: AppPropsWithLayout): JSX.Element {
+
+    const jinjatContext = jinjatProvider(API_URL);
+
+    const {data: project, isLoading, error} = useJinjatProject({schemaContext: jinjatContext});
+
+
+    if (isLoading) {
+        return <div>Loading...</div>;
     }
 
-    return (
-      <ThemedLayout Header={Header}>
-        <Component {...pageProps} />
-      </ThemedLayout>
-    );
-  };
+    if (error != null) {
+        return <div>Something went wrong: {error.message}!</div>;
+    }
 
-  return (
-    <>
-      <GitHubBanner />
-      <RefineKbarProvider>
-        <ColorModeContextProvider>
-          <CssBaseline />
-          <GlobalStyles styles={{ html: { WebkitFontSmoothing: "auto" } }} />
-          <RefineSnackbarProvider>
-            <Refine
-              routerProvider={routerProvider}
-              dataProvider={dataProvider(API_URL)}
-              notificationProvider={notificationProvider}
-              authProvider={authProvider}
-              resources={[
-                {
-                  name: "blog_posts",
-                  list: "/blog-posts",
-                  create: "/blog-posts/create",
-                  edit: "/blog-posts/edit/:id",
-                  show: "/blog-posts/show/:id",
-                  meta: {
-                    canDelete: true,
-                  },
-                },
-                {
-                  name: "categories",
-                  list: "/categories",
-                  create: "/categories/create",
-                  edit: "/categories/edit/:id",
-                  show: "/categories/show/:id",
-                  meta: {
-                    canDelete: true,
-                  },
-                },
-              ]}
-              options={{
-                syncWithLocation: true,
-                warnWhenUnsavedChanges: true,
-              }}
-            >
-              {renderComponent()}
-              <RefineKbar />
-              <UnsavedChangesNotifier />
-            </Refine>
-          </RefineSnackbarProvider>
-        </ColorModeContextProvider>
-      </RefineKbarProvider>
-    </>
-  );
+    let resources = createResources(project!!);
+    const renderComponent = () => {
+        if (Component.noLayout) {
+            return <Component {...pageProps} project={project}/>;
+        }
+
+        return (
+            <ThemedLayout project={project!!}>
+                <Component {...pageProps} project={project}/>
+            </ThemedLayout>
+        );
+    };
+
+    return (
+        <>
+            <RefineKbarProvider>
+                <ColorModeContextProvider>
+                    <CssBaseline/>
+                    <GlobalStyles styles={{html: {WebkitFontSmoothing: "auto"}}}/>
+                    <RefineSnackbarProvider>
+                        <JinjatServiceContextProvider {...jinjatContext}>
+                            <Refine
+                                routerProvider={routerProvider}
+                                dataProvider={dataProvider(API_URL + "/current")}
+                                notificationProvider={notificationProvider}
+                                authProvider={authProvider}
+                                resources={resources}
+                                options={{
+                                    syncWithLocation: true,
+                                    warnWhenUnsavedChanges: true,
+                                }}>
+                                {renderComponent()}
+                                <RefineKbar/>
+                                <UnsavedChangesNotifier/>
+                            </Refine>
+                        </JinjatServiceContextProvider>
+                    </RefineSnackbarProvider>
+                </ColorModeContextProvider>
+            </RefineKbarProvider>
+        </>
+    );
 }
 
-export default MyApp;
+export default JinjatApp;

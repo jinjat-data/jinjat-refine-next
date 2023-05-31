@@ -6,13 +6,11 @@ const mockUsers = [
     name: "John Doe",
     email: "johndoe@mail.com",
     roles: ["admin"],
-    avatar: "https://i.pravatar.cc/150?img=1",
   },
   {
     name: "Jane Doe",
     email: "janedoe@mail.com",
     roles: ["editor"],
-    avatar: "https://i.pravatar.cc/150?img=1",
   },
 ];
 
